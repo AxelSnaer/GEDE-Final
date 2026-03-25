@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://6n3mcis2r7bg"]
+
+[ext_resource type="Texture2D" uid="uid://cn4oafs7ljlev" path="res://icon.svg" id="1_ig7tw"]
+
+[node name="Node2D" type="Node2D"]
+
+[node name="Raymarcher" type="Raymarcher" parent="."]
+texture = ExtResource("1_ig7tw")
+centered = false

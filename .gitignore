@@ -1,0 +1,13 @@
+# Editor-specific configs
+.idea
+.vscode
+
+# The compilation progress stored by SCons (probably)
+.sconsign.dblite
+
+# Outfiles
+*/**.os
+*/**.o
+*/**.dll
+*/**.a
+*/**.so
