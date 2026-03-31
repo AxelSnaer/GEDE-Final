@@ -13,7 +13,7 @@ void initialize_raymarcher(ModuleInitializationLevel p_level) {
 		return;
 	}
 
-	GDREGISTER_RUNTIME_CLASS(Raymarcher);
+	GDREGISTER_CLASS(Raymarcher);
 }
 
 void uninitialize_raymarcher(ModuleInitializationLevel p_level) {
@@ -23,14 +23,14 @@ void uninitialize_raymarcher(ModuleInitializationLevel p_level) {
 }
 
 extern "C" {
-// Initialization.
-GDExtensionBool GDE_EXPORT raymarcher_library_init(GDExtensionInterfaceGetProcAddress p_get_proc_address, const GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization) {
-	godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library, r_initialization);
+	// Initialization.
+	GDExtensionBool GDE_EXPORT raymarcher_library_init(GDExtensionInterfaceGetProcAddress p_get_proc_address, const GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization) {
+		godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library, r_initialization);
 
-	init_obj.register_initializer(initialize_raymarcher);
-	init_obj.register_terminator(uninitialize_raymarcher);
-	init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SCENE);
+		init_obj.register_initializer(initialize_raymarcher);
+		init_obj.register_terminator(uninitialize_raymarcher);
+		init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SCENE);
 
-	return init_obj.init();
-}
+		return init_obj.init();
+	}
 }
