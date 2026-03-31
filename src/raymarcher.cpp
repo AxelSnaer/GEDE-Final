@@ -15,6 +15,185 @@
 
 using namespace godot;
 
+constexpr char template_shader[] = R"(
+	#version 450
+
+	// Invocations in the (x, y, z) dimension
+	layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+	layout(rgba16f, set = 0, binding = 0) uniform image2D color_image;
+	// setup layout for usage of more than 128 bypassing Vulkan limit
+	layout(set = 0, binding = 1) uniform sampler2D depth_image;
+
+	layout(set = 0, binding = 2, std430) restrict buffer Matrices {
+		mat4 projection_matrix;
+		mat4 view_matrix;
+	} matrices;
+
+	// Our push constant
+	layout(push_constant, std430) uniform Params {
+		vec2 raster_size;
+	} params;
+
+	struct Ray {
+		vec3 origin;
+		vec3 direction;
+		vec3 color;
+	};
+
+	struct MarchResult {
+		float depth;
+		int steps;
+		bool hit;
+		vec3 color;
+		vec3 hit_pos;
+		vec3 normal;
+	};
+
+	const vec3 light_pos = vec3(10.0, 10.0, 10.0);
+	const float ambient_strength = 0.3;
+	const float diffuse_strength = 1.0;
+	const float specular_strength = 1.0;
+	const float specular_pow = 32.0;
+
+	const vec3 obj_color = vec3(0.5, 0.5, 0.5);
+	const vec3 glow_color = vec3(0.0, 0.0, 1.0);
+	const float glow_strength = 0.1;
+
+	const float EPSILON = 0.0001;
+	const float MAX_DEPTH = 100.0;
+	const int MAX_STEPS = 500;
+
+	float sdf_torus(vec3 p, float thickness, float radius) {
+		vec2 q = vec2(length(p.xz) - thickness, p.y);
+		return length(q) - radius;
+	}
+
+	float sdf_sphere(vec3 p, float r) {
+		return length(p) - r;
+	}
+
+	float sdf(vec3 point) {
+		#COMPUTE_CODE
+	}
+
+	Ray make_ray(vec3 origin, vec3 direction, vec3 color) {
+		Ray ray;
+		ray.origin = origin;
+		ray.direction = direction;
+		ray.color = obj_color;
+		return ray;
+	}
+
+
+	vec3 estimate_normal(vec3 point) {
+		return normalize(vec3(
+			sdf(point + vec3(EPSILON, 0, 0)) - sdf(point - vec3(EPSILON, 0, 0)),
+			sdf(point + vec3(0, EPSILON, 0)) - sdf(point - vec3(0, EPSILON, 0)),
+			sdf(point + vec3(0, 0, EPSILON)) - sdf(point - vec3(0, 0, EPSILON))
+		));
+	}
+
+	vec3 get_eye_pos() {
+		return matrices.view_matrix[3].xyz;
+	}
+
+	float calculate_lighting(vec3 point, vec3 normal) {
+		float ambient = 0.4;
+		
+		vec3 light_dir = normalize(light_pos - point);
+		float diff = max(dot(normal, light_dir), 0.0) * diffuse_strength;
+		
+		vec3 view_dir = normalize(get_eye_pos() - point);
+		vec3 reflect_dir = reflect(-light_dir, normal);
+		
+		float spec = pow(max(dot(view_dir, reflect_dir), 0.0), specular_pow) * specular_strength;
+		
+		return diff + ambient + spec;
+	}
+
+	Ray calculate_ray(vec2 uv) {
+		mat4 inv_proj_matrix = inverse(matrices.projection_matrix);
+		vec3 origin = get_eye_pos();
+		vec3 dir = (inv_proj_matrix * vec4(uv, 0.0, 1.0)).xyz;
+		dir = normalize((matrices.view_matrix * vec4(dir, 0.0)).xyz);
+		return make_ray(origin, dir, obj_color);
+	}
+
+	MarchResult march_along(in Ray ray, int max_steps, float max_depth) {
+		MarchResult result;
+		result.depth = 0.0;
+		result.steps = 0;
+		result.color = vec3(1.0);
+		result.hit = false;
+		result.normal = vec3(0.0);
+		
+		for (int i = 0; i < max_steps; i++) {
+			result.hit_pos = ray.origin + result.depth * ray.direction;
+			float dist = sdf(result.hit_pos);
+			
+			if (dist < EPSILON) {
+				result.hit = true;
+				result.normal = estimate_normal(result.hit_pos);
+				result.color = ray.color * calculate_lighting(result.hit_pos, result.normal);
+				break;
+			}
+			
+			result.depth += dist;
+			result.steps = i + 1;
+			
+			if (result.depth >= max_depth) {
+				break;
+			}
+		}
+		
+		return result;
+	}
+
+	vec2 normalize_uvs(vec2 uv) {
+		uv -= 0.5;
+		uv *= 2.0;
+		uv.y = -uv.y;
+		return uv;
+	}
+
+	// The code we want to execute in each invocation
+	void main() {
+		ivec2 iuv = ivec2(gl_GlobalInvocationID.xy);
+		ivec2 size = ivec2(params.raster_size);
+
+		vec2 uv = vec2(iuv) / vec2(size);
+		uv.y = 1.0 - uv.y;
+
+		if (uv.x >= size.x || uv.y >= size.y) {
+			return;
+		}
+
+		vec4 color = imageLoad(color_image, iuv);
+		float depth = texelFetch(depth_image, iuv, 0).r;
+		mat4 inv_proj = inverse(matrices.projection_matrix);
+		float linear_depth = 1.0 / (depth * inv_proj[2].w + inv_proj[3].w);
+
+		vec2 nuv = normalize_uvs(uv);
+		Ray ray = calculate_ray(nuv);
+		MarchResult result = march_along(ray, MAX_STEPS, MAX_DEPTH);
+
+		vec3 col = color.rgb;
+
+		if (result.hit && result.depth < linear_depth) {
+			// imageStore(depth_image, iuv, result.depth);
+			col = result.color;
+		}
+
+		// col += glow_color * float(result.steps) * glow_strength;
+
+		color = vec4(col, 1.0);
+
+		imageStore(color_image, iuv, color);
+	}
+)";
+
+
 void Raymarcher::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_shader_code"), &Raymarcher::get_shader_code);
 	ClassDB::bind_method(D_METHOD("set_shader_code", "shader_code"), &Raymarcher::set_shader_code);
@@ -32,8 +211,7 @@ void Raymarcher::set_shader_code(String code) {
     m_mutex->unlock();
 }
 
-void Raymarcher::_notification(int p_what) const
-{
+void Raymarcher::_notification(int p_what) const {
     if (p_what == NOTIFICATION_PREDELETE)
     {
         if (m_sampler.is_valid()) {
@@ -99,8 +277,21 @@ bool Raymarcher::_check_shader() {
     return m_pipeline.is_valid();
 }
 
-void Raymarcher::_render_callback(int32_t p_effect_callback_type, RenderData* p_render_data)
-{
+inline void push_matrix(PackedFloat32Array& arr, const Vector4 matrix[4]) {
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			arr.push_back(matrix[i][j]);
+		}
+	}
+}
+
+inline PackedFloat32Array create_matrix_from_array(const Vector4 matrix[4]) {
+	PackedFloat32Array arr;
+	push_matrix(arr, matrix);
+	return arr;
+}
+
+void Raymarcher::_render_callback(int32_t p_effect_callback_type, RenderData* p_render_data) {
     CompositorEffect::_render_callback(p_effect_callback_type, p_render_data);
     if (m_rd != nullptr && p_effect_callback_type == EFFECT_CALLBACK_TYPE_PRE_TRANSPARENT && _check_shader()) {
 		// Get our render scene buffers object, this gives us access to our render buffers.
@@ -118,14 +309,12 @@ void Raymarcher::_render_callback(int32_t p_effect_callback_type, RenderData* p_
 		}
 
 		Ref<RenderSceneBuffersRD> render_scene_buffers = p_render_data->get_render_scene_buffers();
-		if (render_scene_buffers.is_valid())
-		{
+		if (render_scene_buffers.is_valid()) {
+
 			// Get our render size, this is the 3D render resolution!
 			auto size = render_scene_buffers->get_internal_size();
 			if (size.x == 0 && size.y == 0)
-			{
 				return;
-			}
 
 			// We can use a compute shader here.
 			uint16_t x_groups = (size.x - 1) / 8 + 1;
@@ -136,22 +325,8 @@ void Raymarcher::_render_callback(int32_t p_effect_callback_type, RenderData* p_
 			PackedFloat32Array push_constant;
 			push_constant.push_back(size.x);
 			push_constant.push_back(size.y);
-			push_constant.push_back(0.0);
-			push_constant.push_back(0.0);
-			// camera pos
-			push_constant.push_back(cam_pos.x);
-			push_constant.push_back(cam_pos.y);
-			push_constant.push_back(cam_pos.z);
-			push_constant.push_back(0);
-			// camera orientation
-			push_constant.push_back(cam_forward.x);
-			push_constant.push_back(cam_forward.y);
-			push_constant.push_back(cam_forward.z);
-			push_constant.push_back(0);
-			push_constant.push_back(cam_up.x);
-			push_constant.push_back(cam_up.y);
-			push_constant.push_back(cam_up.z);
-			push_constant.push_back(0);
+			push_constant.push_back(0.0f);
+			push_constant.push_back(0.0f);
 
 			// Loop through views just in case we're doing stereo rendering. No extra cost if this is mono.
 			auto view_count = render_scene_buffers->get_view_count();
@@ -159,29 +334,16 @@ void Raymarcher::_render_callback(int32_t p_effect_callback_type, RenderData* p_
 			{
 				// Projection Matrix
 				Projection projection = scene ? scene->get_view_projection(i) : Projection();
-				// push to matrix for each value combination
-				push_constant.push_back(projection.columns[0].x);
-				push_constant.push_back(projection.columns[0].y);
-				push_constant.push_back(projection.columns[0].z);
-				push_constant.push_back(projection.columns[0].w);
+				
+				// Derived from https://forum.godotengine.org/t/compositor-problems/83074/2
+				Transform3D cam_transform = scene->get_cam_transform();
+				PackedFloat32Array view_matrix_data = {
+					cam_transform.basis.get_column(0).x, cam_transform.basis.get_column(0).y, cam_transform.basis.get_column(0).z, 0.0, 
+					cam_transform.basis.get_column(1).x, cam_transform.basis.get_column(1).y, cam_transform.basis.get_column(1).z, 0.0, 
+					cam_transform.basis.get_column(2).x, cam_transform.basis.get_column(2).y, cam_transform.basis.get_column(2).z, 0.0, 
+					cam_transform.origin.x, cam_transform.origin.y, cam_transform.origin.z, 1.0, 
+				};
 
-				push_constant.push_back(projection.columns[1].x);
-				push_constant.push_back(projection.columns[1].y);
-				push_constant.push_back(projection.columns[1].z);
-				push_constant.push_back(projection.columns[1].w);
-
-				push_constant.push_back(projection.columns[2].x);
-				push_constant.push_back(projection.columns[2].y);
-				push_constant.push_back(projection.columns[2].z);
-				push_constant.push_back(projection.columns[2].w);
-
-				push_constant.push_back(projection.columns[3].x);
-				push_constant.push_back(projection.columns[3].y);
-				push_constant.push_back(projection.columns[3].z);
-				push_constant.push_back(projection.columns[3].w);
-
-
-				// Create a uniform set for color and depth
 
 				// Get the RID for our color image, we will be reading from and writing to it.
 				auto input_image = render_scene_buffers->get_color_layer(i);
@@ -200,7 +362,30 @@ void Raymarcher::_render_callback(int32_t p_effect_callback_type, RenderData* p_
 				depth_uniform->add_id(m_sampler);
 				depth_uniform->add_id(depth_image);
 
-				auto uniform_set = UniformSetCacheRD::get_cache(m_shader, 0, { color_uniform, depth_uniform });
+				PackedFloat32Array matrix_data;
+				push_matrix(matrix_data, projection.columns);
+				matrix_data.append_array(view_matrix_data);
+
+				auto matrix_buf = m_rd->storage_buffer_create(
+					sizeof(Vector4[4]) + sizeof(Vector4[4]),
+					matrix_data.to_byte_array()
+				);
+				
+				Ref<RDUniform> matrices;
+				matrices.instantiate();
+				matrices->set_uniform_type(RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
+				matrices->set_binding(2);
+				matrices->add_id(matrix_buf);
+
+				auto view_buf = m_rd->storage_buffer_create(sizeof(Vector4[4]), view_matrix_data.to_byte_array());
+
+				Ref<RDUniform> view_matrix;
+				view_matrix.instantiate();
+				view_matrix->set_uniform_type(RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
+				view_matrix->set_binding(3);
+				view_matrix->add_id(view_buf);
+
+				auto uniform_set = UniformSetCacheRD::get_cache(m_shader, 0, { color_uniform, depth_uniform, matrices });
 
 				// Run our compute shader.
 				auto compute_list = m_rd->compute_list_begin();
@@ -217,7 +402,7 @@ void Raymarcher::_render_callback(int32_t p_effect_callback_type, RenderData* p_
 
 }
 
-Raymarcher::Raymarcher():  m_shader_code(""), m_dirty(true) {
+Raymarcher::Raymarcher():  m_shader_code("return min(sdf_sphere(point, 1.0), sdf_torus(point, 3.0, 1.0));"), m_dirty(true) {
     m_mutex.instantiate();
     set_effect_callback_type(EFFECT_CALLBACK_TYPE_PRE_TRANSPARENT);
     m_rd = RenderingServer::get_singleton()->get_rendering_device();
