@@ -17,6 +17,8 @@ namespace godot {
         RMShape();
         virtual ~RMShape();
 
+        void _process(double p_delta) override;
+
         [[nodiscard]] virtual String gen_sdf() const = 0;
         static void _bind_methods();
         GDExtensionInt get_operation_type() const;
@@ -26,6 +28,13 @@ namespace godot {
     protected:
         RMShapeOperationType m_operation_type;
         float m_smoothing_amount;
+
+        void invalidate_cache();
+
+    private:
+        Vector3 m_last_position;
+        Vector3 m_last_scale;
+        Vector3 m_last_rotation;
     };
 }
 

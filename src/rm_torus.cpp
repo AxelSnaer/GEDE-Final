@@ -3,9 +3,6 @@
 
 namespace godot {
     RMTorus::RMTorus(): m_thickness(1.0f), m_radius(3.0f) {
-        m_last_position = get_global_position();
-        m_last_scale = get_scale();
-        m_last_rotation = get_rotation();
     }
 
     void RMTorus::_bind_methods() {
@@ -20,30 +17,21 @@ namespace godot {
 
     float RMTorus::get_thickness() const { return m_thickness;}
 
-    void RMTorus::set_thickness(float val) { m_thickness = val; }
+    void RMTorus::set_thickness(float val) {
+        m_thickness = val;
+        invalidate_cache();
+    }
 
     float RMTorus::get_radius() const { return m_radius; }
 
-    void RMTorus::set_radius(float val) { m_radius = val; }
+    void RMTorus::set_radius(float val) {
+        m_radius = val;
+        invalidate_cache();
+    }
 
     String RMTorus::gen_sdf() const {
         const auto placeholder = String("vec2 q = vec2(length(pos.xz) - %d, pos.y);\ndepth = length(q) - %d;");
         const Array args = { m_radius, m_thickness };
         return placeholder.format(args, "%d");
-    }
-
-    void RMTorus::_process(double p_delta) {
-        RMShape::_process(p_delta);
-        Vector3 gl_pos = get_global_position();
-        Vector3 gl_rot = get_global_rotation();
-        Vector3 gl_scale = get_scale();
-        if (gl_pos != m_last_position || gl_rot != m_last_rotation || gl_scale != m_last_scale) {
-            Raymarcher* rm = Raymarcher::get_singleton();
-            if (rm != nullptr)
-                rm->invalidate_cache();
-        }
-        m_last_position = gl_pos;
-        m_last_scale = gl_scale;
-        m_last_rotation = gl_rot;
     }
 }

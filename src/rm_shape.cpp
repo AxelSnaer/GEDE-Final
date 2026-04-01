@@ -3,6 +3,10 @@
 
 namespace godot {
     RMShape::RMShape() {
+        m_last_position = get_global_position();
+        m_last_scale = get_scale();
+        m_last_rotation = get_global_rotation();
+
         Raymarcher* rm = Raymarcher::get_singleton();
 
         if (rm != nullptr)
@@ -14,6 +18,20 @@ namespace godot {
 
         if (rm != nullptr)
             rm->unregister_shape(this);
+    }
+
+    void RMShape::_process(double p_delta)
+    {
+        Vector3 gl_pos = get_global_position();
+        Vector3 gl_rot = get_global_rotation();
+        Vector3 gl_scale = get_scale();
+        
+        if (gl_pos != m_last_position || gl_rot != m_last_rotation || gl_scale != m_last_scale) {
+            invalidate_cache();
+        }
+        m_last_position = gl_pos;
+        m_last_scale = gl_scale;
+        m_last_rotation = gl_rot;
     }
 
     void RMShape::_bind_methods() {
@@ -30,9 +48,22 @@ namespace godot {
 
     GDExtensionInt RMShape::get_operation_type() const { return static_cast<GDExtensionInt>(m_operation_type); }
 
-    void RMShape::set_operation_type(GDExtensionInt p_type) { m_operation_type = static_cast<RMShapeOperationType>(p_type); }
+    void RMShape::set_operation_type(GDExtensionInt p_type) {
+        m_operation_type = static_cast<RMShapeOperationType>(p_type);
+        invalidate_cache();
+    }
 
     float RMShape::get_smoothing_amount() const { return m_smoothing_amount; }
 
-    void RMShape::set_smoothing_amount(float p_amount) { m_smoothing_amount = p_amount; }
+    void RMShape::set_smoothing_amount(float p_amount) {
+        m_smoothing_amount = p_amount;
+        invalidate_cache();
+    }
+
+    void RMShape::invalidate_cache()
+    {
+        Raymarcher* rm = Raymarcher::get_singleton();
+        if (rm != nullptr)
+            rm->invalidate_cache();
+    }
 }
