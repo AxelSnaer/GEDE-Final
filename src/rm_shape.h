@@ -8,6 +8,9 @@ namespace godot {
     class RMShape : public Node3D {
         GDCLASS(RMShape, Node3D)
     public:
+        RMShape();
+        virtual ~RMShape();
+
         [[nodiscard]] virtual String gen_sdf() const = 0;
         static void _bind_methods();
     };

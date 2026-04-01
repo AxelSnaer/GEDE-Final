@@ -1,5 +1,6 @@
 #include "rm_sphere.h"
 #include "godot_cpp/classes/engine.hpp"
+#include "raymarcher.h"
 
 namespace godot {
     RMSphere::RMSphere() : m_radius(1.0f) {
@@ -15,9 +16,9 @@ namespace godot {
     }
 
     String RMSphere::gen_sdf() const {
-        const auto format = String("depth = length(p + vec3(%d, %d, %d)) - %d;");
+        const auto format = String("depth = length(pos) - %d;");
         const Vector3 gl_pos = get_global_position();
-        const Array args = { gl_pos.x, gl_pos.y, gl_pos.z, m_radius };
+        const Array args = { m_radius };
         return format.format(args, "%d");
     }
 
@@ -31,7 +32,9 @@ namespace godot {
         Vector3 gl_rot = get_global_rotation();
         Vector3 gl_scale = get_scale();
         if (gl_pos != m_last_position || gl_rot != m_last_rotation || gl_scale != m_last_scale) {
-            // TODO: FIXME: Invalidate shape shader
+            Raymarcher* rm = Raymarcher::get_singleton();
+            if (rm != nullptr)
+                rm->invalidate_cache();
         }
         m_last_position = gl_pos;
         m_last_scale = gl_scale;

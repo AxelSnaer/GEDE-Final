@@ -1,9 +1,13 @@
 #include "raymarcher.h"
 
 #include <string>
+#include <algorithm>
+
 #include <godot_cpp/core/class_db.hpp>
 
 #include "godot_cpp/classes/node.hpp"
+#include "godot_cpp/classes/engine.hpp"
+#include "godot_cpp/classes/scene_tree.hpp"
 #include "godot_cpp/classes/rd_sampler_state.hpp"
 #include "godot_cpp/classes/rd_shader_source.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
@@ -64,8 +68,49 @@ constexpr char template_shader[] = R"(
 	const float MAX_DEPTH = 100.0;
 	const int MAX_STEPS = 500;
 
-	float sdf(vec3 point) {
-		#COMPUTE_CODE
+
+	mat4 rotate_x(float theta) {
+		float c = cos(theta);
+		float s = sin(theta);
+
+		return mat4(
+			vec4(1, 0, 0, 0),
+			vec4(0, c, -s, 0),
+			vec4(0, s, c, 0),
+			vec4(0, 0, 0, 1)
+		);
+	}
+
+	mat4 rotate_y(float theta) {
+		float c = cos(theta);
+		float s = sin(theta);
+
+		return mat4(
+			vec4(c, 0, s, 0),
+			vec4(0, 1, 0, 0),
+			vec4(-s, 0, c, 0),
+			vec4(0, 0, 0, 1)
+		);
+	}
+
+	mat4 rotate_z(float theta) {
+		float c = cos(theta);
+		float s = sin(theta);
+
+		return mat4(
+			vec4(c, -s, 0, 0),
+			vec4(s, c, 0, 0),
+			vec4(0, 0, 1, 0),
+			vec4(0, 0, 0, 1)
+		);
+	}
+
+	float sdf(vec3 p) {
+		float d = MAX_DEPTH;
+
+		#SDF_SCENE
+
+		return d;
 	}
 
 	Ray make_ray(vec3 origin, vec3 direction, vec3 color) {
@@ -168,7 +213,6 @@ constexpr char template_shader[] = R"(
 		vec2 nuv = normalize_uvs(uv);
 		Ray ray = calculate_ray(nuv);
 		MarchResult result = march_along(ray, MAX_STEPS, MAX_DEPTH);
-
 		vec3 col = color.rgb;
 
 		if (result.hit && result.depth < linear_depth) {
@@ -184,22 +228,10 @@ constexpr char template_shader[] = R"(
 	}
 )";
 
+Raymarcher* Raymarcher::m_singleton = nullptr;
+
 
 void Raymarcher::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_shader_code"), &Raymarcher::get_shader_code);
-	ClassDB::bind_method(D_METHOD("set_shader_code", "shader_code"), &Raymarcher::set_shader_code);
-    ADD_PROPERTY(PropertyInfo(Variant::STRING, "shader_code", PROPERTY_HINT_MULTILINE_TEXT), "set_shader_code", "get_shader_code");
-}
-
-String Raymarcher::get_shader_code() {
-    return m_shader_code;
-}
-
-void Raymarcher::set_shader_code(String code) {
-    m_mutex->lock();
-    m_shader_code = code;
-    m_dirty = true;
-    m_mutex->unlock();
 }
 
 void Raymarcher::_notification(int p_what) const {
@@ -225,7 +257,7 @@ bool Raymarcher::_check_shader() {
     // Check if our shader is dirty.
     m_mutex->lock();
     if (m_dirty) {
-        new_shader_code = m_shader_code;
+    	new_shader_code = _generate_shader_code();
         m_dirty = false;
     }
     m_mutex->unlock();
@@ -236,8 +268,7 @@ bool Raymarcher::_check_shader() {
     }
 
     // Apply template.
-    auto tmp = String(template_shader);
-    new_shader_code = tmp.replace("#COMPUTE_CODE", new_shader_code);
+    new_shader_code = _generate_shader_code();
 
     // Out with the old.
     if (m_shader.is_valid()) {
@@ -266,6 +297,38 @@ bool Raymarcher::_check_shader() {
 
     m_pipeline = m_rd->compute_pipeline_create(m_shader);
     return m_pipeline.is_valid();
+}
+
+String Raymarcher::_generate_shader_code() {
+	String sdf;
+
+	for (const auto& shape : m_shapes) {
+		Vector3 gp = -shape->get_global_position();
+		Vector3 scale = shape->get_scale();
+		Vector3 euler = shape->get_global_rotation();
+
+		String shape_template = R"(
+		{
+			vec3 scale = vec3(%f, %f, %f);
+			vec3 euler = vec3(%f, %f, %f);
+			vec3 pos = (rotate_z(euler.z) * rotate_x(euler.x) * rotate_y(euler.y) * vec4(p, 1.0)).xyz;
+			pos = (pos + vec3(%f, %f, %f)) / scale;
+			float depth = d;
+			%s;
+			d = min(d, depth * min(scale.x, min(scale.y, scale.z)));
+		})";
+
+		sdf += shape_template
+			.format(Array({ shape->gen_sdf() }), "%s")
+			.format(Array({
+				scale.x, scale.y, scale.z,
+				euler.x, euler.y, euler.z,
+				gp.x, gp.y, gp.z
+			}), "%f");
+	}
+
+    auto tmp = String(template_shader);
+    return tmp.replace("#SDF_SCENE", sdf);
 }
 
 inline void push_matrix(PackedFloat32Array& arr, const Vector4 matrix[4]) {
@@ -393,7 +456,33 @@ void Raymarcher::_render_callback(int32_t p_effect_callback_type, RenderData* p_
 
 }
 
-Raymarcher::Raymarcher():  m_shader_code(""), m_dirty(true) {
+void godot::Raymarcher::register_shape(RMShape* shape)
+{
+	m_shapes.push_back(shape);
+}
+
+void godot::Raymarcher::unregister_shape(RMShape* shape)
+{
+	auto it = std::find(m_shapes.begin(), m_shapes.end(), shape);
+	if (it == m_shapes.end()) {
+		return;
+	}
+
+	m_shapes.erase(it);
+}
+
+void godot::Raymarcher::invalidate_cache()
+{
+	m_dirty = true;
+}
+
+Raymarcher* godot::Raymarcher::get_singleton()
+{
+    return m_singleton;
+}
+
+Raymarcher::Raymarcher(): m_dirty(true) {
+	m_singleton = this;
     m_mutex.instantiate();
     set_effect_callback_type(EFFECT_CALLBACK_TYPE_PRE_TRANSPARENT);
     m_rd = RenderingServer::get_singleton()->get_rendering_device();
@@ -404,9 +493,8 @@ Raymarcher::Raymarcher():  m_shader_code(""), m_dirty(true) {
         sampler_state->set_mag_filter(RenderingDevice::SAMPLER_FILTER_NEAREST);
         m_sampler = m_rd->sampler_create(sampler_state);
     }
-    // Initialize any variables here.
 }
 
 Raymarcher::~Raymarcher() {
-    // Add your cleanup here.
+	m_singleton = nullptr;
 }

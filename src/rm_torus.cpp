@@ -1,4 +1,5 @@
 #include "rm_torus.h"
+#include "raymarcher.h"
 
 namespace godot {
     RMTorus::RMTorus(): m_thickness(1.0f), m_radius(3.0f) {
@@ -26,9 +27,8 @@ namespace godot {
     void RMTorus::set_radius(float val) { m_radius = val; }
 
     String RMTorus::gen_sdf() const {
-        const auto placeholder = String("vec3 pos = p + vec3(%d, %d, %d);\nvec2 q = vec2(length(pos.xz) - %d, pos.y);\ndepth = length(q) - %d;");
-        const Vector3 gl_pos = get_global_position();
-        const Array args = { gl_pos.x, gl_pos.y, gl_pos.z, m_thickness, m_radius };
+        const auto placeholder = String("vec2 q = vec2(length(pos.xz) - %d, pos.y);\ndepth = length(q) - %d;");
+        const Array args = { m_radius, m_thickness };
         return placeholder.format(args, "%d");
     }
 
@@ -38,7 +38,9 @@ namespace godot {
         Vector3 gl_rot = get_global_rotation();
         Vector3 gl_scale = get_scale();
         if (gl_pos != m_last_position || gl_rot != m_last_rotation || gl_scale != m_last_scale) {
-            // TODO: FIXME: Invalidate shape shader
+            Raymarcher* rm = Raymarcher::get_singleton();
+            if (rm != nullptr)
+                rm->invalidate_cache();
         }
         m_last_position = gl_pos;
         m_last_scale = gl_scale;

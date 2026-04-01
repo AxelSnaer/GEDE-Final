@@ -13,11 +13,11 @@ compositor_effects = Array[CompositorEffect]([SubResource("Raymarcher_7dm0k")])
 environment = SubResource("Environment_7dm0k")
 compositor = SubResource("Compositor_ig7tw")
 
-[node name="CSGBox3D" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
-size = Vector3(8, 1, 10)
-
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.88413286, 0, 0.46723557, -0.29622194, 0.7733425, 0.56053, -0.3613331, -0.63398844, 0.6837375, 1.3546739, 0.6833826, 2.2908792)
 
 [node name="RMSphere" type="RMSphere" parent="."]
+transform = Transform3D(0.99698, 0, 0.0776587, 0, 1, 0, -0.0776587, 0, 0.99698, -7.2435575, -0.017947435, -0.5999651)
+
+[node name="RMTorus" type="RMTorus" parent="."]
+transform = Transform3D(1.0000001, 0, 0, 0, 1, 0, 0, 0, 1.0000001, 0, 0, 0)
