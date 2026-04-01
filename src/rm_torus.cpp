@@ -1,7 +1,9 @@
 #include "rm_torus.h"
 
 namespace godot {
-    RMTorus::RMTorus(): m_thickness(1.0f), m_radius(3.0f) {}
+    RMTorus::RMTorus(): m_thickness(1.0f), m_radius(3.0f) {
+        m_last_position = get_global_position();
+    }
 
     void RMTorus::_bind_methods() {
         ClassDB::bind_method(D_METHOD("get_thickness"), &RMTorus::get_thickness);
@@ -26,5 +28,14 @@ namespace godot {
         const Vector3 gl_pos = get_global_position();
         const Array args = { gl_pos.x, gl_pos.y, gl_pos.z, m_thickness, m_radius };
         return placeholder.format(args, "%d");
+    }
+
+    void RMTorus::_process(double p_delta) {
+        RMShape::_process(p_delta);
+        Vector3 gl_pos = get_global_position();
+        if (gl_pos != m_last_position) {
+            // TODO: FIXME: Invalidate shape shader
+        }
+        m_last_position = gl_pos;
     }
 }

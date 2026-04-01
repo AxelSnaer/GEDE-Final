@@ -14,9 +14,13 @@ namespace godot {
         [[nodiscard]] float get_radius() const;
         void set_radius(float val);
         [[nodiscard]] String gen_sdf() const override;
+
+        void _process(double p_delta);
+
     private:
         float m_thickness;
         float m_radius;
+        Vector3 m_last_position;
     };
 }
 
