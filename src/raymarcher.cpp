@@ -458,6 +458,8 @@ void Raymarcher::_render_callback(int32_t p_effect_callback_type, RenderData* p_
 void godot::Raymarcher::register_compositor(RMCompositor* compositor)
 {
 	m_compositors.push_back(compositor);
+
+	invalidate_cache();
 }
 
 void godot::Raymarcher::unregister_compositor(RMCompositor* compositor)
@@ -468,6 +470,8 @@ void godot::Raymarcher::unregister_compositor(RMCompositor* compositor)
 	}
 
 	m_compositors.erase(it);
+
+	invalidate_cache();
 }
 
 void godot::Raymarcher::invalidate_cache()

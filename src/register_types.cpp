@@ -9,6 +9,7 @@
 #include "rm_cube.h"
 #include "rm_sphere.h"
 #include "rm_torus.h"
+#include "rm_mandelbrot.h"
 
 using namespace godot;
 
@@ -22,6 +23,7 @@ void initialize_raymarcher(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(RMSphere);
 	GDREGISTER_CLASS(RMTorus);
 	GDREGISTER_CLASS(RMCube);
+	GDREGISTER_CLASS(RMMandelbrot);
 	GDREGISTER_CLASS(RMCompositor);
 }
 
