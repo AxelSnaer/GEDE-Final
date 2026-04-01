@@ -1,0 +1,1 @@
+scons platform=windows -j8 verbose=yes use_mingw=yes --debug=explain

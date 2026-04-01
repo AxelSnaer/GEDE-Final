@@ -6,6 +6,8 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include "rm_sphere.h"
+
 using namespace godot;
 
 void initialize_raymarcher(ModuleInitializationLevel p_level) {
@@ -14,6 +16,7 @@ void initialize_raymarcher(ModuleInitializationLevel p_level) {
 	}
 
 	GDREGISTER_CLASS(Raymarcher);
+	GDREGISTER_CLASS(RMSphere);
 }
 
 void uninitialize_raymarcher(ModuleInitializationLevel p_level) {
