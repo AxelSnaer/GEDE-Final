@@ -21,3 +21,4 @@ size = Vector3(8, 1, 10)
 transform = Transform3D(0.88413286, 0, 0.46723557, -0.29622194, 0.7733425, 0.56053, -0.3613331, -0.63398844, 0.6837375, 1.3546739, 0.6833826, 2.2908792)
 
 [node name="RMSphere" type="RMSphere" parent="."]
+operation_type = 0
