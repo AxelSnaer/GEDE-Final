@@ -1,4 +1,5 @@
 #include "rm_sphere.h"
+#include "godot_cpp/classes/engine.hpp"
 
 namespace godot {
     RMSphere::RMSphere() : m_radius(1.0f) {}
@@ -9,8 +10,8 @@ namespace godot {
         ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_RANGE, "0.0,180.0,0.1,or_greater"), "set_radius", "get_radius");
     }
 
-    String RMSphere::sdf() const {
-        const auto format = String("length(p + vec3(%d, %d, %d)) - %d");
+    String RMSphere::gen_sdf() const {
+        const auto format = String("depth = length(p + vec3(%d, %d, %d)) - %d;");
         const Vector3 gl_pos = get_global_position();
         const Array args = { gl_pos.x, gl_pos.y, gl_pos.z, m_radius };
         return format.format(args, "%d");

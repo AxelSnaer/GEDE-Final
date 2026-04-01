@@ -64,15 +64,6 @@ constexpr char template_shader[] = R"(
 	const float MAX_DEPTH = 100.0;
 	const int MAX_STEPS = 500;
 
-	float sdf_torus(vec3 p, float thickness, float radius) {
-		vec2 q = vec2(length(p.xz) - thickness, p.y);
-		return length(q) - radius;
-	}
-
-	float sdf_sphere(vec3 p, float r) {
-		return length(p) - r;
-	}
-
 	float sdf(vec3 point) {
 		#COMPUTE_CODE
 	}
@@ -402,7 +393,7 @@ void Raymarcher::_render_callback(int32_t p_effect_callback_type, RenderData* p_
 
 }
 
-Raymarcher::Raymarcher():  m_shader_code("return min(sdf_sphere(point, 1.0), sdf_torus(point, 3.0, 1.0));"), m_dirty(true) {
+Raymarcher::Raymarcher():  m_shader_code(""), m_dirty(true) {
     m_mutex.instantiate();
     set_effect_callback_type(EFFECT_CALLBACK_TYPE_PRE_TRANSPARENT);
     m_rd = RenderingServer::get_singleton()->get_rendering_device();

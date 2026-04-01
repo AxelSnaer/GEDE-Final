@@ -7,6 +7,7 @@
 #include <godot_cpp/godot.hpp>
 
 #include "rm_sphere.h"
+#include "rm_torus.h"
 
 using namespace godot;
 
@@ -16,7 +17,9 @@ void initialize_raymarcher(ModuleInitializationLevel p_level) {
 	}
 
 	GDREGISTER_CLASS(Raymarcher);
+	GDREGISTER_ABSTRACT_CLASS(RMShape);
 	GDREGISTER_CLASS(RMSphere);
+	GDREGISTER_CLASS(RMTorus);
 }
 
 void uninitialize_raymarcher(ModuleInitializationLevel p_level) {

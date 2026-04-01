@@ -1,14 +1,15 @@
-#ifndef GEDE_FINAL_SM_SPHERE_H
-#define GEDE_FINAL_SM_SPHERE_H
-#include "../godot-cpp/gen/include/godot_cpp/classes/node3d.hpp"
+#ifndef RAYMARCHER_SPHERE_H
+#define RAYMARCHER_SPHERE_H
+
+#include "rm_shape.h"
 
 namespace godot {
-    class RMSphere final : public Node3D {
-        GDCLASS(RMSphere, Node3D)
+    class RMSphere final : public RMShape {
+        GDCLASS(RMSphere, RMShape)
     public:
         RMSphere();
         static void _bind_methods();
-        [[nodiscard]] String sdf() const;
+        [[nodiscard]] String gen_sdf() const override;
         [[nodiscard]] float get_radius() const;
         void set_radius(float value);
     protected:
@@ -16,5 +17,4 @@ namespace godot {
     };
 }
 
-
-#endif //GEDE_FINAL_SM_SPHERE_H
+#endif
