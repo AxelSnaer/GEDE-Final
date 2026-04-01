@@ -4,6 +4,13 @@ entry_symbol = "raymarcher_library_init"
 compatibility_minimum = "4.1"
 reloadable = true
 
+[icons]
+RMShape = "res://icons/boxicons--cube.svg"
+RMSphere = "res://icons/boxicons--cube.svg"
+RMTorus = "res://icons/boxicons--cube.svg"
+RMCube = "res://icons/boxicons--cube.svg"
+RMCompositor = "res://icons/boxicons--brush-sparkles.svg"
+
 [libraries]
 
 macos.debug = "res://bin/libraymarcher.macos.template_debug.framework"
