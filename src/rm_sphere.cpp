@@ -14,7 +14,6 @@ namespace godot {
 
     String RMSphere::gen_sdf() const {
         const auto format = String("depth = length(pos) - %d;");
-        const Vector3 gl_pos = get_global_position();
         const Array args = { m_radius };
         return format.format(args, "%d");
     }

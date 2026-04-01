@@ -25,4 +25,9 @@ transform = Transform3D(0.99698, 0, 0.0776587, 0, 1, 0, -0.0776587, 0, 0.99698, 
 transform = Transform3D(0.99698, 0, 0.0776587, 0, 1, 0, -0.0776587, 0, 0.99698, 0.95561475, 0.75300705, 0.6660994)
 
 [node name="RMTorus" type="RMTorus" parent="RMShapeCompositor"]
-transform = Transform3D(1.0000001, 0, 0, 0, 1, 0, 0, 0, 1.0000001, 0.72630787, 0, -0.4999947)
+transform = Transform3D(1.0000001, 0, 0, 0, 1, 0, 0, 0, 1.0000001, 0.72630787, -0.42113876, -0.4999947)
+
+[node name="RMCube" type="RMCube" parent="RMShapeCompositor"]
+operation_type = 3
+smoothing_amount = 1.0
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.31921482, 3.1201293)

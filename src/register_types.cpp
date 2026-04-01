@@ -6,6 +6,7 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include "rm_cube.h"
 #include "rm_sphere.h"
 #include "rm_torus.h"
 
@@ -20,6 +21,7 @@ void initialize_raymarcher(ModuleInitializationLevel p_level) {
 	GDREGISTER_ABSTRACT_CLASS(RMShape);
 	GDREGISTER_CLASS(RMSphere);
 	GDREGISTER_CLASS(RMTorus);
+	GDREGISTER_CLASS(RMCube);
 	GDREGISTER_CLASS(RMCompositor);
 }
 

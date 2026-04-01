@@ -2,7 +2,7 @@
 #include "raymarcher.h"
 
 namespace godot {
-    RMShape::RMShape() {
+    RMShape::RMShape(): m_operation_type(RMShapeOperationType::Add) {
         m_last_position = get_global_position();
         m_last_scale = get_scale();
         m_last_rotation = get_global_rotation();
