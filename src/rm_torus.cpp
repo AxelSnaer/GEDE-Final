@@ -3,6 +3,8 @@
 namespace godot {
     RMTorus::RMTorus(): m_thickness(1.0f), m_radius(3.0f) {
         m_last_position = get_global_position();
+        m_last_scale = get_scale();
+        m_last_rotation = get_rotation();
     }
 
     void RMTorus::_bind_methods() {
@@ -33,9 +35,13 @@ namespace godot {
     void RMTorus::_process(double p_delta) {
         RMShape::_process(p_delta);
         Vector3 gl_pos = get_global_position();
-        if (gl_pos != m_last_position) {
+        Vector3 gl_rot = get_global_rotation();
+        Vector3 gl_scale = get_scale();
+        if (gl_pos != m_last_position || gl_rot != m_last_rotation || gl_scale != m_last_scale) {
             // TODO: FIXME: Invalidate shape shader
         }
         m_last_position = gl_pos;
+        m_last_scale = gl_scale;
+        m_last_rotation = gl_rot;
     }
 }

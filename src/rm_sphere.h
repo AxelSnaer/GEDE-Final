@@ -16,6 +16,8 @@ namespace godot {
     protected:
         float m_radius;
         Vector3 m_last_position;
+        Vector3 m_last_scale;
+        Vector3 m_last_rotation;
     };
 }
 
