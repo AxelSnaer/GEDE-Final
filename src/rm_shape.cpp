@@ -6,18 +6,9 @@ namespace godot {
         m_last_position = get_global_position();
         m_last_scale = get_scale();
         m_last_rotation = get_global_rotation();
-
-        Raymarcher* rm = Raymarcher::get_singleton();
-
-        if (rm != nullptr)
-            rm->register_shape(this);
     }
 
     RMShape::~RMShape() {
-        Raymarcher* rm = Raymarcher::get_singleton();
-
-        if (rm != nullptr)
-            rm->unregister_shape(this);
     }
 
     void RMShape::_process(double p_delta)

@@ -9,6 +9,7 @@
 #include "godot_cpp/classes/render_data.hpp"
 
 #include "rm_shape.h"
+#include "rm_compositor.h"
 
 namespace godot {
     class Raymarcher final : public CompositorEffect {
@@ -25,8 +26,8 @@ namespace godot {
         ~Raymarcher() override;
         void _render_callback(int32_t p_effect_callback_type, RenderData* p_render_data) override;
 
-        void register_shape(RMShape* shape);
-        void unregister_shape(RMShape* shape);
+        void register_compositor(RMCompositor* shape);
+        void unregister_compositor(RMCompositor* shape);
         void invalidate_cache();
 
         static Raymarcher* get_singleton();
@@ -37,7 +38,7 @@ namespace godot {
         RID m_pipeline;
         RID m_sampler;
         Ref<Mutex> m_mutex;
-        std::vector<RMShape*> m_shapes;
+        std::vector<RMCompositor*> m_compositors;
         bool m_dirty;
 
         static Raymarcher* m_singleton;

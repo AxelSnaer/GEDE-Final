@@ -16,9 +16,13 @@ compositor = SubResource("Compositor_ig7tw")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.88413286, 0, 0.46723557, -0.29622194, 0.7733425, 0.56053, -0.3613331, -0.63398844, 0.6837375, 1.3546739, 0.6833826, 2.2908792)
 
-[node name="RMSphere" type="RMSphere" parent="."]
-transform = Transform3D(0.99698, 0, 0.0776587, 0, 1, 0, -0.0776587, 0, 0.99698, -7.2435575, -0.017947435, -0.5999651)
+[node name="RMShapeCompositor" type="RMCompositor" parent="."]
 
-[node name="RMTorus" type="RMTorus" parent="."]
-transform = Transform3D(1.0000001, 0, 0, 0, 1, 0, 0, 0, 1.0000001, 0, 0, 0)
-operation_type = 0
+[node name="RMSphere" type="RMSphere" parent="RMShapeCompositor"]
+transform = Transform3D(0.99698, 0, 0.0776587, 0, 1, 0, -0.0776587, 0, 0.99698, -0.1169942, -0.017947435, -0.09242451)
+
+[node name="RMSphere2" type="RMSphere" parent="RMShapeCompositor"]
+transform = Transform3D(0.99698, 0, 0.0776587, 0, 1, 0, -0.0776587, 0, 0.99698, 0.95561475, 0.75300705, 0.6660994)
+
+[node name="RMTorus" type="RMTorus" parent="RMShapeCompositor"]
+transform = Transform3D(1.0000001, 0, 0, 0, 1, 0, 0, 0, 1.0000001, 0.72630787, 0, -0.4999947)

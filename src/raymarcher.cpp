@@ -319,61 +319,15 @@ bool Raymarcher::_check_shader() {
     return m_pipeline.is_valid();
 }
 
-String generate_mix_function(RMShapeOperationType op, float smoothing) {
-	switch (op) {
-		case RMShapeOperationType::Add:
-			return "op_union(d, depth)";
-		case RMShapeOperationType::Subtract:
-			return "op_sub(d, depth)";
-		case RMShapeOperationType::Intersect:
-			return "op_intersect(d, depth)";
-		case RMShapeOperationType::SmoothUnion:
-			return String("op_smooth_union(d, depth, %f)").format(Array({ smoothing }), "%f");
-	}
-
-	print_error(String("Invalid operation type passed to generate_mix_function: ") + static_cast<int>(op));
-
-	return "op_union(d, depth)";
-}
-
 String Raymarcher::_generate_shader_code() {
 	String sdf;
 
-	for (const auto& shape : m_shapes) {
-		Vector3 gp = -shape->get_global_position();
-		Vector3 scale = shape->get_scale();
-		Vector3 euler = shape->get_global_rotation();
-
-		String shape_template = R"(
-		{
-			vec3 scale = vec3(%f, %f, %f);
-			vec3 euler = vec3(%f, %f, %f);
-			vec3 pos = p + vec3(%f, %f, %f);
-			pos = (rotate_z(euler.z) * rotate_x(euler.x) * rotate_y(euler.y) * vec4(pos, 1.0)).xyz;
-			pos /= scale;
-			float depth = d;
-			%s
-			depth *= min(scale.x, min(scale.y, scale.z));
-			d = %s;
-		})";
-
-		sdf += shape_template
-			.format(Array({
-				shape->gen_sdf(),
-				generate_mix_function(
-					static_cast<RMShapeOperationType>(shape->get_operation_type()),
-					shape->get_smoothing_amount()
-				)
-			}), "%s")
-			.format(Array({
-				scale.x, scale.y, scale.z,
-				euler.x, euler.y, euler.z,
-				gp.x, gp.y, gp.z
-			}), "%f");
+	for (auto& compositor : m_compositors) {
+		sdf += compositor->gen_sdf();
 	}
 
-    auto tmp = String(template_shader);
-    return tmp.replace("#SDF_SCENE", sdf);
+    return String(template_shader)
+		.replace("#SDF_SCENE", sdf);
 }
 
 inline void push_matrix(PackedFloat32Array& arr, const Vector4 matrix[4]) {
@@ -501,19 +455,19 @@ void Raymarcher::_render_callback(int32_t p_effect_callback_type, RenderData* p_
 
 }
 
-void godot::Raymarcher::register_shape(RMShape* shape)
+void godot::Raymarcher::register_compositor(RMCompositor* compositor)
 {
-	m_shapes.push_back(shape);
+	m_compositors.push_back(compositor);
 }
 
-void godot::Raymarcher::unregister_shape(RMShape* shape)
+void godot::Raymarcher::unregister_compositor(RMCompositor* compositor)
 {
-	auto it = std::find(m_shapes.begin(), m_shapes.end(), shape);
-	if (it == m_shapes.end()) {
+	auto it = std::find(m_compositors.begin(), m_compositors.end(), compositor);
+	if (it == m_compositors.end()) {
 		return;
 	}
 
-	m_shapes.erase(it);
+	m_compositors.erase(it);
 }
 
 void godot::Raymarcher::invalidate_cache()
