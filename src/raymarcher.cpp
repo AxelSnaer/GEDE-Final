@@ -19,6 +19,8 @@
 
 using namespace godot;
 
+// https://typhomnt.github.io/teaching/ray_tracing/raymarching_intro/
+// https://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/#rotation-and-translation
 constexpr char template_shader[] = R"(
 	#version 450
 
@@ -103,6 +105,24 @@ constexpr char template_shader[] = R"(
 			vec4(0, 0, 1, 0),
 			vec4(0, 0, 0, 1)
 		);
+	}
+
+
+	float op_union(float d1, float d2) {
+		return min(d1, d2);
+	}
+
+	float op_sub(float d1, float d2) {
+		return max(d1, -d2);
+	}
+
+	float op_intersect(float d1, float d2) {
+		return max(d1, d2);
+	}
+
+	float op_smooth_union(float d1, float d2, float k) {
+		float h = clamp(0.5 + 0.5 * (d2 - d1) / k, 0.0, 1.0);
+		return mix(d2, d1, h) - k * h * (1.0 - h);
 	}
 
 	float sdf(vec3 p) {
@@ -299,6 +319,23 @@ bool Raymarcher::_check_shader() {
     return m_pipeline.is_valid();
 }
 
+String generate_mix_function(RMShapeOperationType op, float smoothing) {
+	switch (op) {
+		case RMShapeOperationType::Add:
+			return "op_union(d, depth)";
+		case RMShapeOperationType::Subtract:
+			return "op_sub(d, depth)";
+		case RMShapeOperationType::Intersect:
+			return "op_intersect(d, depth)";
+		case RMShapeOperationType::SmoothUnion:
+			return String("op_smooth_union(d, depth, %f)").format(Array({ smoothing }), "%f");
+	}
+
+	print_error(String("Invalid operation type passed to generate_mix_function: ") + static_cast<int>(op));
+
+	return "op_union(d, depth)";
+}
+
 String Raymarcher::_generate_shader_code() {
 	String sdf;
 
@@ -311,15 +348,23 @@ String Raymarcher::_generate_shader_code() {
 		{
 			vec3 scale = vec3(%f, %f, %f);
 			vec3 euler = vec3(%f, %f, %f);
-			vec3 pos = (rotate_z(euler.z) * rotate_x(euler.x) * rotate_y(euler.y) * vec4(p, 1.0)).xyz;
-			pos = (pos + vec3(%f, %f, %f)) / scale;
+			vec3 pos = p + vec3(%f, %f, %f);
+			pos = (rotate_z(euler.z) * rotate_x(euler.x) * rotate_y(euler.y) * vec4(pos, 1.0)).xyz;
+			pos /= scale;
 			float depth = d;
-			%s;
-			d = min(d, depth * min(scale.x, min(scale.y, scale.z)));
+			%s
+			depth *= min(scale.x, min(scale.y, scale.z));
+			d = %s;
 		})";
 
 		sdf += shape_template
-			.format(Array({ shape->gen_sdf() }), "%s")
+			.format(Array({
+				shape->gen_sdf(),
+				generate_mix_function(
+					static_cast<RMShapeOperationType>(shape->get_operation_type()),
+					shape->get_smoothing_amount()
+				)
+			}), "%s")
 			.format(Array({
 				scale.x, scale.y, scale.z,
 				euler.x, euler.y, euler.z,

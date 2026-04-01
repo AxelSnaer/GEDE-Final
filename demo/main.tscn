@@ -21,3 +21,4 @@ transform = Transform3D(0.99698, 0, 0.0776587, 0, 1, 0, -0.0776587, 0, 0.99698, 
 
 [node name="RMTorus" type="RMTorus" parent="."]
 transform = Transform3D(1.0000001, 0, 0, 0, 1, 0, 0, 0, 1.0000001, 0, 0, 0)
+operation_type = 0
