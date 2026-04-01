@@ -67,7 +67,7 @@ constexpr char template_shader[] = R"(
 	const float glow_strength = 0.1;
 
 	const float EPSILON = 0.0001;
-	const float MAX_DEPTH = 100.0;
+	const float MAX_DEPTH = 1000.0;
 	const int MAX_STEPS = 500;
 
 

@@ -49,7 +49,7 @@ namespace godot {
             {
                 vec3 scale = vec3(%f, %f, %f);
                 vec3 euler = vec3(%f, %f, %f);
-                vec3 pos = p + vec3(%f, %f, %f);
+                vec3 pos = pp + vec3(%f, %f, %f);
                 pos = (rotate_z(euler.z) * rotate_x(euler.x) * rotate_y(euler.y) * vec4(pos, 1.0)).xyz;
                 pos /= scale;
                 float depth = shape_depth;
@@ -75,13 +75,33 @@ namespace godot {
 
         return String(R"({
             float shape_depth = MAX_DEPTH;
+            vec3 c = vec3(%f, %f, %f);
+            bool repeat = %s;
+            vec3 pp = repeat ? mod(p + 0.5 * c, c) - 0.5 * c : p;
             #GEN
             d = min(d, shape_depth);
-        })").replace("#GEN", sdf);
+        })")
+            .format(Array({ m_repeat.is_zero_approx() ? String("false") : String("true") }), "%s")
+            .format(Array({ m_repeat.x, m_repeat.y, m_repeat.z }), "%f")
+            .replace("#GEN", sdf);
     }
 
     void RMCompositor::_bind_methods()
     {
+        ClassDB::bind_method(D_METHOD("get_repeat"), &RMCompositor::get_repeat);
+        ClassDB::bind_method(D_METHOD("set_repeat", "repeat"), &RMCompositor::set_repeat);
+        ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "repeat"), "set_repeat", "get_repeat");
+    }
+
+    Vector3 RMCompositor::get_repeat() const
+    {
+        return m_repeat;
+    }
+
+    void RMCompositor::set_repeat(Vector3 val)
+    {
+        m_repeat = val;
+        invalidate_cache();
     }
 
     std::vector<RMShape*> RMCompositor::get_shapes() const
@@ -97,5 +117,12 @@ namespace godot {
         }
 
         return shapes;
+    }
+
+    void RMCompositor::invalidate_cache() const
+    {
+        Raymarcher* rm = Raymarcher::get_singleton();
+        if (rm != nullptr)
+            rm->invalidate_cache();
     }
 }
