@@ -2,10 +2,12 @@
 #include "raymarcher.h"
 
 namespace godot {
-    RMShape::RMShape(): m_operation_type(RMShapeOperationType::Add) {
-        m_last_position = get_global_position();
-        m_last_scale = get_scale();
-        m_last_rotation = get_global_rotation();
+    RMShape::RMShape(): m_operation_type(RMShapeOperationType::Add), m_smoothing_amount(0.0f) {
+        if (is_inside_tree()) {
+            m_last_position = get_global_position();
+            m_last_scale = get_scale();
+            m_last_rotation = get_global_rotation();
+        }
     }
 
     RMShape::~RMShape() {
@@ -25,8 +27,16 @@ namespace godot {
         m_last_rotation = gl_rot;
     }
 
+    String RMShape::gen_sdf() const {
+        auto ret = String();
+        GDVIRTUAL_CALL(_gen_sdf, ret);
+        return ret;
+    }
+
     void RMShape::_bind_methods() {
-        ClassDB::add_virtual_method("RMShape", MethodInfo(Variant::STRING, "gen_sdf"), {});
+        ClassDB::bind_method(D_METHOD("gen_sdf"), &RMShape::gen_sdf);
+        GDVIRTUAL_BIND(_gen_sdf);
+        ClassDB::bind_static_method(get_class_static(), D_METHOD("invalidate_cache"), &RMShape::invalidate_cache);
 
         ClassDB::bind_method(D_METHOD("get_operation_type"), &RMShape::get_operation_type);
         ClassDB::bind_method(D_METHOD("set_operation_type", "operation_type"), &RMShape::set_operation_type);

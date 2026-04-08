@@ -1,4 +1,6 @@
-[gd_scene load_steps=6 format=3 uid="uid://6n3mcis2r7bg"]
+[gd_scene load_steps=7 format=3 uid="uid://6n3mcis2r7bg"]
+
+[ext_resource type="Script" uid="uid://busfbqh1qlff5" path="res://rm_shape.gd" id="1_ig7tw"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7dm0k"]
 sky_top_color = Color(0.3312881, 0.46518606, 0.5767204, 1)
@@ -26,4 +28,15 @@ compositor = SubResource("Compositor_ig7tw")
 
 [node name="RMCompositor" type="RMCompositor" parent="."]
 
-[node name="RMCube" type="RMCube" parent="RMCompositor"]
+[node name="RMShape" type="RMShape" parent="RMCompositor"]
+operation_type = 3
+smoothing_amount = 0.36
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -545.61816, 0, 85.97446)
+script = ExtResource("1_ig7tw")
+radius = 90.0
+
+[node name="RMShape2" type="RMShape" parent="RMCompositor"]
+smoothing_amount = 1.0
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 263.97543, 0, 78.035706)
+script = ExtResource("1_ig7tw")
+radius = 90.0

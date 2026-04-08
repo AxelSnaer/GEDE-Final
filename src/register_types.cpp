@@ -19,7 +19,7 @@ void initialize_raymarcher(ModuleInitializationLevel p_level) {
 	}
 
 	GDREGISTER_CLASS(Raymarcher);
-	GDREGISTER_ABSTRACT_CLASS(RMShape);
+	GDREGISTER_CLASS(RMShape);
 	GDREGISTER_CLASS(RMSphere);
 	GDREGISTER_CLASS(RMTorus);
 	GDREGISTER_CLASS(RMCube);
