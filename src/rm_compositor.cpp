@@ -119,8 +119,7 @@ namespace godot {
         return shapes;
     }
 
-    void RMCompositor::invalidate_cache() const
-    {
+    void RMCompositor::invalidate_cache() {
         Raymarcher* rm = Raymarcher::get_singleton();
         if (rm != nullptr)
             rm->invalidate_cache();

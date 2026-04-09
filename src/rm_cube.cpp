@@ -19,21 +19,21 @@ namespace godot {
 
     float RMCube::get_width() const { return m_width; }
 
-    void RMCube::set_width(float val) {
+    void RMCube::set_width(const float val) {
         m_width = val;
         invalidate_cache();
     }
 
     float RMCube::get_height() const { return m_height;}
 
-    void RMCube::set_height(float val) {
+    void RMCube::set_height(const float val) {
         m_height = val;
         invalidate_cache();
     }
 
     float RMCube::get_length() const { return m_length;}
 
-    void RMCube::set_length(float val) {
+    void RMCube::set_length(const float val) {
         m_length = val;
         invalidate_cache();
     }

@@ -29,14 +29,22 @@ compositor = SubResource("Compositor_ig7tw")
 [node name="RMCompositor" type="RMCompositor" parent="."]
 
 [node name="RMShape" type="RMShape" parent="RMCompositor"]
-operation_type = 3
-smoothing_amount = 0.36
-transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -545.61816, 0, 85.97446)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.7857764, 0, 0)
 script = ExtResource("1_ig7tw")
-radius = 90.0
 
 [node name="RMShape2" type="RMShape" parent="RMCompositor"]
-smoothing_amount = 1.0
-transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 263.97543, 0, 78.035706)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8293705, 0, 0)
 script = ExtResource("1_ig7tw")
-radius = 90.0
+
+[node name="RMCube" type="RMCube" parent="RMCompositor"]
+width = 1.2
+height = 2.0
+operation_type = 3
+smoothing_amount = 1.0
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8118874, -0.37895775)
+
+[node name="RMTorus" type="RMTorus" parent="RMCompositor"]
+radius = 3.8
+operation_type = 3
+smoothing_amount = 1.0
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0.45126176)

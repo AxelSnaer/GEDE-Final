@@ -28,7 +28,7 @@ namespace godot {
     }
 
     String RMShape::gen_sdf() const {
-        auto ret = String();
+        String ret;
         GDVIRTUAL_CALL(_gen_sdf, ret);
         return ret;
     }
@@ -56,7 +56,7 @@ namespace godot {
 
     float RMShape::get_smoothing_amount() const { return m_smoothing_amount; }
 
-    void RMShape::set_smoothing_amount(float p_amount) {
+    void RMShape::set_smoothing_amount(const float p_amount) {
         m_smoothing_amount = p_amount;
         invalidate_cache();
     }

@@ -9,7 +9,7 @@
 #include <vector>
 
 namespace godot {
-    class RMCompositor : public Node3D {
+    class RMCompositor final : public Node3D {
         GDCLASS(RMCompositor, Node3D)
     public:
         RMCompositor();
@@ -24,7 +24,7 @@ namespace godot {
         std::vector<RMShape*> get_shapes() const;
 
     protected:
-        void invalidate_cache() const;
+        static void invalidate_cache();
 
     private:
         Vector3 m_repeat;
